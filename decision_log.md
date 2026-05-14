@@ -42,12 +42,15 @@
 
 ## Things I noticed but did NOT fix
 
--
+- **Testing (unit & integration tests):**
+I did not implement tests due to time constraints. However, I consider them critical for code quality. I would aim for ~80–85% coverage and ensure both happy paths and error scenarios are properly validated.
 
 ## Docs / code I left alone deliberately
 
--
+- **SQL Schema and Query Patterns**
+ I did not modify the database layer. The current implementation is simple and queries appear to be properly parameterized. Given the low data volume, query optimization was not a priority, although it would become important at scale.
 
 ## What I'd do with another 6 hours
 
--
+- **Architecture improvements**
+I would refactor the codebase towards a Clean Architecture approach (e.g., Hexagonal or DDD) to improve separation of concerns, scalability, and maintainability.
