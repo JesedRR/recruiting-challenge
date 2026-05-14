@@ -10,10 +10,9 @@
   - What was wrong or weak: The previous implementation trusted a plain `X-Merchant-Id` header sent by clients. This is a major security vulnerability because any client could impersonate any merchant by simply changing the header value. There's no verification that the client actually owns that merchant ID.
   - Shape of my improvement: Implemented JWT-based authentication. Clients now request a token from `/api/auth/token` endpoint, which returns a cryptographically signed JWT. The middleware validates the token signature and expiry on every request. Only a valid token can access protected endpoints.
 
-- **Issue 2 — <short title>**
-  - What was wrong or weak:
-  - Shape of my improvement:
-  - Alternatives I considered and rejected:
+- **Issue 2 — Unhandled Errors in Routes**
+  - What was wrong or weak: The application did not properly handle errors in route handlers. Throwing errors directly caused the server to crash, resulting in `ECONNRESET` errors for clients. This made the application unreliable and difficult to debug.
+  - Shape of my improvement: Implemented centralized error-handling middleware to catch and handle all errors consistently. Updated route handlers to use `next(error)` instead of throwing errors directly. This ensures that errors are logged and returned to clients with appropriate HTTP status codes and messages.
 
 - **Issue 3 — <short title>**
   - What was wrong or weak:

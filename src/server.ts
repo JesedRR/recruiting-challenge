@@ -7,6 +7,8 @@ import { metricsRouter } from './routes/metrics.js';
 import { seedIfEmpty } from './scripts/seed.js';
 
 import { generateToken } from './lib/jwt.js';
+import { errorHandler, notFoundHandler } from './lib/error-handler.js';
+
 
 
 initSchema();
@@ -36,6 +38,8 @@ app.post('/api/auth/token', (req, res) => {
 app.use('/api/orders', authMiddleware, ordersRouter);
 app.use('/api/revenue', authMiddleware, revenueRouter);
 app.use('/api/metrics', authMiddleware, metricsRouter);
+app.use(errorHandler);
+app.use(notFoundHandler);
 
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error(err);

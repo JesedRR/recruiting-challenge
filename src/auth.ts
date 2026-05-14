@@ -17,13 +17,16 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction):
   const authHeader = req.header('Authorization');
   
   if (!authHeader) {
-    res.status(401).json({ error: 'missing_authorization_header' });
+    res.status(401).json({ 
+      status: 401, 
+      error: 'missing_authorization_header' 
+    });
     return;
   }
 
   const parts = authHeader.split(' ');
   if (parts.length !== 2 || parts[0] !== 'Bearer') {
-    res.status(401).json({ error: 'invalid_authorization_format' });
+    res.status(401).json({ status: 401, error: 'invalid_authorization_format' });
     return;
   }
 
@@ -31,7 +34,7 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction):
   const merchantId = verifyToken(token);
 
   if (!merchantId) {
-    res.status(401).json({ error: 'invalid_or_expired_token' });
+    res.status(401).json({ status: 401, error: 'invalid_or_expired_token' });
     return;
   }
 

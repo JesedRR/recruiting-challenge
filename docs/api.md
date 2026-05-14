@@ -19,7 +19,11 @@ List orders for the authenticated merchant. Optional query: `from`, `to`, `limit
 Get a single order by ID.
 
 ## `POST /api/orders`
-Body: `{ customer_email, total_amount, type? }`.
+Body: `{
+  "customer_email": "string",
+  "total_amount": "number",
+  "type": "sale"
+}`.
 
 ## `GET /api/revenue?from=...&to=...`
 Total revenue for the merchant in the date range.
@@ -29,3 +33,8 @@ TODO: document fields.
 
 ## `GET /api/metrics/top-customers`
 TODO: document fields.
+
+### Errors:
+- **400 Bad Request**: Invalid query parameters.
+- **401 Unauthorized**: Missing or invalid JWT token.
+- **500 Internal Server Error**: Unexpected server error.
