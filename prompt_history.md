@@ -429,4 +429,90 @@ CSV downloads for the correct merchant
 Try this fix and the merchant switching should work correctly!
 **What I accepted, rejected, or refined:**
 this fix it works to change the merchant
+
+## Session 9 — <Ajustes en lso endpoints para autenticación>
+
+**Prompt:**
+```
+necesito que revises el codigo de orders.ts ya que al buscar una orden con un id, me indica que no la encuentra me parece que es por un tema con el merchantId
+```
+
+**What the model returned:**
+Revisando el código del archivo orders.ts, aquí hay algunos puntos importantes relacionados con el endpoint GET /api/orders/:id que podrían estar causando el problema:
+
+1. Llamada a ordersDal.getById
+En el siguiente fragmento:
+
+El método ordersDal.getById solo recibe el id como parámetro. Sin embargo, en muchos sistemas, las órdenes suelen estar asociadas a un merchantId para garantizar que un merchant solo pueda acceder a sus propias órdenes.
+
+Si ordersDal.getById espera también el merchantId como parámetro para filtrar las órdenes, entonces este código no está pasando el merchantId. Esto podría ser la causa del problema.
+
+2. Validación del resultado
+El código valida si la orden existe:
+
+Esto es correcto, pero si ordersDal.getById no está implementado correctamente (por ejemplo, si no filtra por merchantId), podría devolver null incluso para órdenes existentes.
+
+3. Revisión de ordersDal.getById
+Es necesario revisar la implementación de ordersDal.getById en orders-dal.ts para confirmar:
+
+Si está filtrando correctamente por merchantId.
+Si está buscando en la base de datos el id correcto.
+4. Middleware de autenticación
+El código asume que req.merchantId está disponible. Esto implica que debe haber un middleware de autenticación que:
+
+Valide el token JWT.
+Extraiga el merchantId del token y lo asigne a req.merchantId.
+Si este middleware no está funcionando correctamente, req.merchantId podría ser undefined, lo que podría causar problemas en las consultas.
+
+5. Recomendación de corrección
+Si ordersDal.getById necesita el merchantId, el código debería ser algo como esto:
+
+Además, asegúrate de que ordersDal.getById esté implementado para filtrar por merchantId y id.
+
+6. Pruebas adicionales
+Verifica que el middleware de autenticación esté asignando correctamente req.merchantId.
+Asegúrate de que el ID realmente existe en la base de datos y está asociado al merchantId del token JWT.
+Si necesitas que revise la implementación de ordersDal.getById o el middleware de autenticación, indícalo y puedo buscar esos archivos.
+
+**What I accepted, rejected, or refined:**
+Es necesario implementar la autenticacion en los endpoint
+
+## Session 10 — <Add auth to endpoints>
+
+**Prompt:**
+```
+Como agrego la auth a los endpoint? porque entiendo que en el path o en los parametros no debería ir el merchant id sino que con el bearer debe sacarlo, ayudame a realizar esa implementación
+```
+
+**What the model returned:**
+Para implementar la extracción del merchantId desde el token JWT en el encabezado Authorization, necesitas un middleware que valide el token, lo decodifique y extraiga el merchantId. Aquí te explico cómo hacerlo paso a paso:
+
+1. Crear un Middleware para Autenticación
+El middleware se encargará de:
+
+Verificar que el token JWT esté presente y sea válido.
+Decodificar el token para extraer el merchantId.
+Asignar el merchantId al objeto req para que esté disponible en los controladores.
+Ejemplo de Middleware:
+Crea un archivo llamado auth-middleware.ts en la carpeta lib o similar:
+
+2. Integrar el Middleware en las Rutas
+En orders.ts, importa y usa el middleware authenticate para proteger las rutas que requieren autenticación.
+
+Modificación del archivo orders.ts:
+3. Configurar la Clave Secreta del JWT
+Asegúrate de tener una clave secreta para firmar y verificar los tokens JWT. Esto se puede configurar en un archivo .env:
+
+Archivo .env:
+Y asegúrate de cargar las variables de entorno en tu aplicación, por ejemplo, usando dotenv:
+
+4. Pruebas
+Token válido: Envía una solicitud con un token válido en el encabezado Authorization y verifica que el merchantId se extrae correctamente.
+Token inválido: Envía una solicitud con un token inválido o sin encabezado Authorization y verifica que el servidor responde con un error 401 Unauthorized.
+5. Ejemplo de Solicitud
+Solicitud con curl:
+Con estos cambios, el merchantId se extraerá automáticamente del token JWT y estará disponible en req.merchantId para todas las rutas protegidas. Si necesitas más ayuda, avísame.
+
+**What I accepted, rejected, or refined:**
+Ajuste el código que me dio para el archivo auth-middleware.ts ya que tengo el desarrollo de jwt.ts
 …

@@ -3,11 +3,14 @@ import { ordersDal } from '../dal/orders-dal.js';
 import { randomUUID } from 'node:crypto';
 import { HttpError } from '../lib/http-errors.js';
 import { ordersToCSV } from '../lib/csv-formatter.js';
+import { authenticate, AuthenticatedRequest } from '../lib/auth-middleware.js';
+
 
 
 export const ordersRouter = Router();
+ordersRouter.use(authenticate);
 
-ordersRouter.get('/', async (req, res, next) => {
+ordersRouter.get('/', async (req: AuthenticatedRequest, res, next) => {
   try {
     const orders = ordersDal.listByMerchant(req.merchantId!, {
       from: typeof req.query.from === 'string' ? req.query.from : undefined,
@@ -20,7 +23,7 @@ ordersRouter.get('/', async (req, res, next) => {
   }
 });
 
-ordersRouter.get('/export/csv', async (req, res, next) => {
+ordersRouter.get('/export/csv', async (req: AuthenticatedRequest, res, next) => {
   try {
     const from = typeof req.query.from === 'string' ? req.query.from : undefined;
     const to = typeof req.query.to === 'string' ? req.query.to : undefined;
@@ -48,9 +51,9 @@ ordersRouter.get('/export/csv', async (req, res, next) => {
   }
 });
 
-ordersRouter.get('/:id', async (req, res, next) => {
+ordersRouter.get('/:id', async (req: AuthenticatedRequest, res, next) => {
   try {
-    const order = ordersDal.getById(req.params.id);
+    const order = ordersDal.getById(req.merchantId!, req.params.id);
     if (!order) {
       throw new HttpError(404, 'Order not found');
     }
@@ -60,7 +63,7 @@ ordersRouter.get('/:id', async (req, res, next) => {
   }
 });
 
-ordersRouter.post('/', async (req, res, next) => {
+ordersRouter.post('/', async (req: AuthenticatedRequest, res, next) => {
   try {
     const body = req.body as {
       customer_email?: string;

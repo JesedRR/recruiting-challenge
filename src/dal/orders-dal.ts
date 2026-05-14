@@ -35,8 +35,9 @@ export const ordersDal = {
       .all(merchantId, limit) as OrderRow[];
   },
 
-  getById(id: string): OrderRow | undefined {
-    return db.prepare(`SELECT * FROM orders WHERE id = ?`).get(id) as OrderRow | undefined;
+  getById(merchantId: string, id: string): OrderRow | undefined {
+    return db.prepare(`SELECT * FROM orders WHERE merchant_id = ? and id = ?`).get(merchantId, id) as OrderRow | undefined;
+    //return db.prepare(`SELECT * FROM orders WHERE id = ?`).get(id) as OrderRow | undefined;
   },
 
   create(order: Omit<OrderRow, 'created_at'>): OrderRow {

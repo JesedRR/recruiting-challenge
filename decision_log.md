@@ -25,6 +25,10 @@
     Multi-tenant isolation is broken if tokens don't reflect current user context. 
     This was a security boundary issue.
 
+- **Issue 4 — Weak Authentication and Missing Merchant Validation**
+  - What was wrong: The `merchantId` was passed directly in headers or query parameters, making it easy to spoof. The database query also lacked a `merchantId` filter, allowing potential unauthorized access.
+  - Fix: Added JWT-based authentication to embed and validate the `merchantId` in tokens. Updated the database query to include `WHERE merchant_id = ? AND id = ?` for secure data access.
+
 ## Feature chosen
 
 - **Feature:** Feature A — CSV export of orders
@@ -47,10 +51,13 @@ I did not implement tests due to time constraints. However, I consider them crit
 
 ## Docs / code I left alone deliberately
 
-- **SQL Schema and Query Patterns**
- I did not modify the database layer. The current implementation is simple and queries appear to be properly parameterized. Given the low data volume, query optimization was not a priority, although it would become important at scale.
+- **HTML and Frontend:**
+I did not modify the HTML or frontend interface significantly. The focus was on backend fixes, but the frontend could be improved to better consume the updated endpoints.
 
 ## What I'd do with another 6 hours
+
+- **Frontend Integration:**
+I would add buttons or an interface to consume the endpoints directly, such as for exporting CSVs or viewing orders. This would improve usability and demonstrate the functionality more effectively.
 
 - **Architecture improvements**
 I would refactor the codebase towards a Clean Architecture approach (e.g., Hexagonal or DDD) to improve separation of concerns, scalability, and maintainability.

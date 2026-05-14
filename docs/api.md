@@ -9,6 +9,8 @@ All protected endpoints require a JWT token in the `Authorization` header:
 Body: `{ "merchantId": "" }`
 Response: `{ "token": "ey..." }`
 
+## The `merchantId` is embedded in the token. All subsequent requests to protected endpoints must include this token in the `Authorization` header as `Bearer <token>`.
+
 ## `GET /api/health`
 No auth. Returns `{ ok: true }`.
 
