@@ -2,7 +2,12 @@
 
 > Quick-and-dirty. Not complete.
 
-All endpoints require the `X-Merchant-Id` header.
+All protected endpoints require a JWT token in the `Authorization` header:
+
+## Getting a Token
+## POST /api/auth/token
+Body: `{ "merchantId": "" }`
+Response: `{ "token": "ey..." }`
 
 ## `GET /api/health`
 No auth. Returns `{ ok: true }`.

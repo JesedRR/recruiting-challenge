@@ -6,6 +6,9 @@ import { revenueRouter } from './routes/revenue.js';
 import { metricsRouter } from './routes/metrics.js';
 import { seedIfEmpty } from './scripts/seed.js';
 
+import { generateToken } from './lib/jwt.js';
+
+
 initSchema();
 seedIfEmpty();
 
@@ -17,6 +20,17 @@ app.use(express.static('public'));
 
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true });
+});
+
+// Token generation endpoint (for testing/demo)
+app.post('/api/auth/token', (req, res) => {
+  const { merchantId } = req.body;
+  if (!merchantId) {
+    res.status(400).json({ error: 'merchantId_required' });
+    return;
+  }
+  const token = generateToken(merchantId);
+  res.json({ token });
 });
 
 app.use('/api/orders', authMiddleware, ordersRouter);

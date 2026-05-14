@@ -5,8 +5,30 @@ const avgOrderEl = document.getElementById('avg-order');
 const revenue30dEl = document.getElementById('revenue-30d');
 const ordersTbody = document.getElementById('orders-tbody');
 
-function api(path) {
-  return fetch(path, { headers: { 'X-Merchant-Id': select.value } }).then((r) => r.json());
+let authToken = localStorage.getItem('authToken');
+
+async function getToken(merchantId) {
+  const response = await fetch('/api/auth/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ merchantId })
+  });
+  const { token } = await response.json();
+  localStorage.setItem('authToken', token);
+  return token;
+}
+
+async function apiCall(path) {
+  const select = document.querySelector('select');
+  const merchantId = select.value;
+  
+  if (!authToken || authToken === '') {
+    authToken = await getToken(merchantId);
+  }
+  
+  return fetch(path, {
+    headers: { 'Authorization': `Bearer ${authToken}` }
+  }).then((r) => r.json());
 }
 
 function money(cents) {
@@ -18,7 +40,7 @@ function isoDate(d) {
 }
 
 async function refresh() {
-  const summary = await api('/api/metrics/summary');
+  const summary = await apiCall('/api/metrics/summary');
   totalOrdersEl.textContent = summary.total_orders ?? '—';
   uniqueCustomersEl.textContent = summary.unique_customers ?? '—';
   avgOrderEl.textContent = money(summary.avg_order_value_cents ?? 0);

@@ -7,8 +7,8 @@
 
 - **`server.ts`** — Express bootstrapper. Wires routers to paths.
 - **`db.ts`** — SQLite connection + schema init. Single shared `db` instance.
-- **`auth.ts`** — request authentication. Today: trusts `X-Merchant-Id` header.
-  Eventually this becomes a real signed token; the header shape is a placeholder.
+- **`auth.ts`** — request authentication middleware. Validates JWT tokens from Authorization header and extracts merchant ID.
+- **`lib/jwt.ts`** — JWT utilities for token generation and verification.
 - **`dal/`** — data-access layer. The intent is that all order queries route
   through `ordersDal` so we have one place to add auditing, caching, tenancy
   filters, etc. (Not all routes follow this yet — see `metrics.ts`.)
