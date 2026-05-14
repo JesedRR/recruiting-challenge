@@ -61,4 +61,19 @@ export const ordersDal = {
       .get(merchantId, from, to) as { total: number };
     return row.total;
   },
+
+  getForExport(merchantId: string, from?: string, to?: string): OrderRow[] {
+  if (from && to) {
+    return db
+      .prepare(
+        `SELECT * FROM orders
+         WHERE merchant_id = ? AND created_at >= ? AND created_at < ?
+         ORDER BY created_at ASC`,
+      )
+      .all(merchantId, from, to) as OrderRow[];
+  }
+  return db
+    .prepare(`SELECT * FROM orders WHERE merchant_id = ? ORDER BY created_at ASC`)
+    .all(merchantId) as OrderRow[];
+}
 };

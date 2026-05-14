@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { ordersDal } from '../dal/orders-dal.js';
 import { randomUUID } from 'node:crypto';
 import { HttpError } from '../lib/http-errors.js';
+import { ordersToCSV } from '../lib/csv-formatter.js';
 
 
 export const ordersRouter = Router();
@@ -14,6 +15,34 @@ ordersRouter.get('/', async (req, res, next) => {
       limit: typeof req.query.limit === 'string' ? Number(req.query.limit) : undefined,
     });
   res.json({ orders });
+  } catch (error) {
+    next(error);
+  }
+});
+
+ordersRouter.get('/export/csv', async (req, res, next) => {
+  try {
+    const from = typeof req.query.from === 'string' ? req.query.from : undefined;
+    const to = typeof req.query.to === 'string' ? req.query.to : undefined;
+
+    // Validate date range if provided
+    if (from || to) {
+      if (!from || !to) {
+        throw new HttpError(400, 'Both from and to are required together');
+      }
+      // Basic validation: to should be after from
+      if (new Date(to) <= new Date(from)) {
+        throw new HttpError(400, 'to must be after from');
+      }
+    }
+
+    const orders = ordersDal.getForExport(req.merchantId!, from, to);
+    const csv = ordersToCSV(orders);
+
+    // Set response headers for CSV download
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="orders-${new Date().toISOString().slice(0,10)}.csv"`);
+    res.send(csv);
   } catch (error) {
     next(error);
   }

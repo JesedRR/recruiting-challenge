@@ -209,7 +209,7 @@ This setup ensures that your application has consistent error handling across al
 **What I accepted, rejected, or refined:**
 I accepted the most, but I ask for an error solution, see in the next session
 
-## Session 4 — <Add error handler to endpoints>
+## Session 5 — <Add error handler to endpoints>
 
 **Prompt:**
 ```
@@ -259,4 +259,174 @@ Error-Handling Middleware:
 The errorHandler middleware in your server.ts file will now handle the HttpError and return a proper response to the client.
 **What I accepted, rejected, or refined:**
 I accepted the fix, only it was necessary to pass the error and add the try catch, that the model missing in the last message
+
+## Session 6 — <Develop feature step by step>
+
+**Prompt:**
+```
+I want to develop the Feature A, can you guide step by step to develop it, explain me the stapes, and all the new files that I need to create, also explainme the integration with the rest of the code
+```
+
+**What the model returned:**
+I'll guide you through implementing Feature A (CSV export). Let me first examine the current codebase structure to provide you with accurate integration points.
+
+Perfect! I've reviewed the codebase. Here's a comprehensive step-by-step guide to implement Feature A (CSV export of orders):
+
+Architecture Overview
+The current system has:
+
+Backend: Express.js with JWT auth (merchant ID from token)
+Database: SQLite with orders table indexed by merchant_id and created_at
+Frontend: Vanilla JS with token-based auth
+DAL: ordersDal.listByMerchant() already supports date range filtering
+Step-by-Step Implementation
+Phase 1: Backend — Create CSV Export Endpoint
+Step 1.1: Extend the DAL (optional, but recommended)
+Add a method to orders-dal.ts to get raw orders without limit constraints for CSV exports:
+
+Why: Exports shouldn't have the 100-item limit. Ordered ascending (oldest first) for natural chronological flow.
+
+Step 1.2: Add CSV utility module
+Create src/lib/csv-formatter.ts:
+
+Design decisions:
+
+Columns: ID, Date, Customer Email, Type, Status, Amount (practical for merchant reconciliation)
+Date format: ISO with time included (easier to debug)
+Currency: Cents converted to USD dollars.cents format
+Escaping: Proper CSV escaping per RFC 4180
+Step 1.3: Add CSV export route
+Extend orders.ts by adding this endpoint:
+
+Design decisions:
+
+Route: /api/orders/export/csv (nested under orders, clear intent)
+Date parameters: Optional from and to query strings (ISO format: 2025-01-15)
+Response: Attachment header triggers browser download
+Filename: Includes date for easy file organization
+Important: This route must be registered BEFORE the /:id route in orders.ts (Express matches top-to-bottom).
+
+Phase 2: Frontend — Add Download Button
+Step 2.1: Update HTML
+Edit index.html to add a section with download button:
+
+Place this after the revenue section but before the orders table.
+
+Step 2.2: Update JavaScript
+Add this to app.js:
+
+New Files Summary
+File	Purpose
+src/lib/csv-formatter.ts	CSV serialization, field escaping, formatting
+Files to Modify
+File	Changes
+orders-dal.ts	Add getForExport() method
+orders.ts	Add GET /export/csv endpoint
+index.html	Add export form UI
+app.js	Add download handler and date picker logic
+Integration Points
+1. Authentication
+Export endpoint is protected by authMiddleware (line in server.ts applies to all /api/orders/* routes)
+Merchant isolation: req.merchantId ensures each merchant sees only their orders
+2. Database Query
+Uses existing SQLite schema with merchant_id and created_at indexes
+Date range queries are already optimized
+3. Error Handling
+Uses existing HttpError class from http-errors.ts
+Errors bubble to existing error handler middleware
+4. Frontend State
+Reuses existing authToken and apiCall() pattern
+Merchant selector automatically affects which orders are exported
+Quality Considerations
+Scalability:
+
+Large exports (10k+ orders) should work fine with SQLite
+For very large sets, consider pagination/streaming in the future
+Security:
+
+Auth via JWT ensures merchant isolation
+No direct DB access from frontend
+CSV escaping prevents injection
+UX:
+
+Pre-fills date range (last 30 days) to reduce friction
+Clear error messages
+Download triggers directly (not a new page)
+Testing the Feature
+Local API test (bash/terminal):
+UI test:
+Switch between merchants in the dashboard
+Pick different date ranges
+Verify downloaded CSV contains correct data
+This implementation follows the existing patterns in your codebase and gives you full control over the column shape, date formatting, and auth model as requested in the feature spec.
+
+**What I accepted, rejected, or refined:**
+Well I noticed that in the web the download it is correct, but with the auth fix, I can´t see the recent orders, the strange thing here is that I can download the csv, even if I don't have the auth token, so I ask the model to fix this in the next session
+
+## Session 7 — <Fix auth in interface>
+
+**Prompt:**
+```
+I noticed an error, when I open localhost:3000 y can see the interface, and I can download the csv, but I cant see the recent orders, I undertsand that the reason it is the auth token becasue I only was test it in postnman, and now in chorme I can't verify the auth, how can I do this or fix this issue?
+```
+
+**What the model returned:**
+I'll help you fix this auth issue. Let me examine the current state of your app.js and the API endpoints to identify the problem.
+
+Found the issue! 🎯 Look at your app.js — there's a function name mismatch:
+
+Line 25: You define the function as async function apiCall(path) { ... }
+Line 54-57: You call it as await api(...) instead of await apiCall(...)
+This causes a ReferenceError that breaks the orders and revenue fetches, but the page still loads (just shows "—" for all values).
+
+The CSV download might work because it's using the correct apiCall function name in your export handler.
+
+Quick fix: Change lines 54 and 57 in app.js from:
+
+To:
+
+Also check if you're seeing console errors in Chrome. Open DevTools (F12 → Console tab) to verify this is the issue. You should see ReferenceError: api is not defined.
+
+After fixing this, the orders should appear in your dashboard and you'll be able to verify the auth is working correctly. The CSV download should still work too.
+
+**What I accepted, rejected, or refined:**
+That works, but I have another error, because if I change the merchant the recnet orders don't change, so it is a problem with the auth token (next session)
+
+## Session 8 — <Fix auth token in interface>
+
+**Prompt:**
+```
+well I think I have an error, becasue if I select another merchant, the recent orderd don't change, so how can I develop the function of auth to be able in chrome?
+```
+
+**What the model returned:**
+Great catch! 🎯 The issue is that the token is cached in localStorage and tied to the first merchant. When you switch merchants, the old token is still being used.
+
+Here's what's happening:
+
+Page loads → token generated for "m_acme"
+Token stored in localStorage
+You switch dropdown to "m_bistro"
+refresh() runs, but apiCall() still uses the old "m_acme" token
+Backend validates token, sees it's for "m_acme", returns "m_acme" orders
+Dropdown selection is ignored because the token overrides it ❌
+Solution: Clear token when merchant changes
+Replace this line in app.js:
+With:
+
+What this does:
+
+When you change the merchant dropdown, it clears the cached token
+Next apiCall() call sees authToken is empty
+It generates a new token for the newly selected merchant
+Data displays for the correct merchant ✓
+Now when you switch merchants, you'll see:
+
+Different orders
+Different revenue
+Different metrics
+CSV downloads for the correct merchant
+Try this fix and the merchant switching should work correctly!
+**What I accepted, rejected, or refined:**
+this fix it works to change the merchant
 …
